@@ -1,0 +1,42 @@
+name: Deploy to team.vibesagency.co
+
+# Hostinger's native Git auto-deploy supports only one connection per site,
+# and that one is already used by the vibes-team-portal repo. This plugin
+# (vibes-portal-enhancements-v3) deploys itself over SFTP instead, so it
+# still gets the same "push to main -> live" workflow.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   SFTP_HOST     e.g. 92.113.18.157 (from hPanel -> Advanced -> SSH Access,
+#                 or FTP Accounts -> "FTP IP (hostname)", without ftp://)
+#   SFTP_PORT     22 for SFTP (the SSH port shown in hPanel -> SSH Access),
+#                 or 21 if using plain FTP with an FTP account instead
+#   SFTP_USERNAME the FTP/SSH username for the account that can write to
+#                 wp-content/plugins/vibes-portal-enhancements-v3
+#   SFTP_PASSWORD its password
+#
+# This workflow only ever uploads the files in this repo, to this one
+# plugin folder. It never deletes anything on the server and never touches
+# any other folder.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload plugin files over SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: './*'
+          remote_path: '/public_html/wp-content/plugins/vibes-portal-enhancements-v3'
+          sftp_only: true
+          delete_remote_files: false
